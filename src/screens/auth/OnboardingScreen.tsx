@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
     View,
@@ -14,26 +13,40 @@ import {
 } from 'react-native';
 import { useAppDispatch } from '../../store';
 import { updateProfile } from '../../store/slices/profileSlice';
-import PrimaryButton from '../../components/ui/PrimaryButton';
 import AppHeader from '../../components/layout/AppHeader';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+    FadeIn,
+    FadeInRight,
+    FadeOutLeft,
+    SlideInRight,
+    ZoomIn,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import AnimatedButton from '../../components/ui/AnimatedButton';
+import ProgressRing from '../../components/ui/ProgressRing';
 
 const { width } = Dimensions.get('window');
 
 const GOALS = [
-    { id: 'lose_fat', label: 'Lose Fat', icon: '🔥' },
-    { id: 'build_muscle', label: 'Build Muscle', icon: '💪' },
-    { id: 'body_recomp', label: 'Body Recomposition', icon: '⚖️' },
-    { id: 'increase_strength', label: 'Increase Strength', icon: '🏋️‍♂️' },
-    { id: 'improve_fitness', label: 'Improve Fitness & Endurance', icon: '🏃‍♂️' },
+    { id: 'lose_fat', label: 'Lose Fat', icon: '🔥', color: ['#f97316', '#ef4444'] },
+    { id: 'build_muscle', label: 'Build Muscle', icon: '💪', color: ['#8b5cf6', '#ec4899'] },
+    { id: 'body_recomp', label: 'Body Recomposition', icon: '⚖️', color: ['#06b6d4', '#3b82f6'] },
+    { id: 'increase_strength', label: 'Increase Strength', icon: '🏋️‍♂️', color: ['#10b981', '#22c55e'] },
+    { id: 'improve_fitness', label: 'Improve Fitness', icon: '🏃‍♂️', color: ['#eab308', '#f59e0b'] },
 ];
 
 const EXPERIENCE_LEVELS = [
-    { id: 'beginner', label: 'Beginner', description: '0-1 years training' },
-    { id: 'intermediate', label: 'Intermediate', description: '1-3 years training' },
-    { id: 'advanced', label: 'Advanced', description: '3+ years training' },
+    { id: 'beginner', label: 'Beginner', description: '0-1 years training', icon: '🌱' },
+    { id: 'intermediate', label: 'Intermediate', description: '1-3 years training', icon: '💪' },
+    { id: 'advanced', label: 'Advanced', description: '3+ years training', icon: '🚀' },
 ];
 
-const GENDERS = ['Male', 'Female', 'Other'];
+const GENDERS = [
+    { id: 'Male', label: 'Male', icon: '👨' },
+    { id: 'Female', label: 'Female', icon: '👩' },
+    { id: 'Other', label: 'Other', icon: '👤' }
+];
 
 export default function OnboardingScreen() {
     const dispatch = useAppDispatch();
@@ -49,8 +62,16 @@ export default function OnboardingScreen() {
     const [height, setHeight] = useState('');
 
     const handleNext = () => {
-        if (step === 1 && !goal) return Alert.alert('Selection Required', 'Please select a primary goal.');
-        if (step === 2 && !experience) return Alert.alert('Selection Required', 'Please select your experience level.');
+        if (step === 1 && !goal) {
+            Alert.alert('Selection Required', 'Please select a primary goal.');
+            return;
+        }
+        if (step === 2 && !experience) {
+            Alert.alert('Selection Required', 'Please select your experience level.');
+            return;
+        }
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
         if (step < 3) {
             setStep(step + 1);
@@ -59,9 +80,15 @@ export default function OnboardingScreen() {
         }
     };
 
+    const handleBack = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setStep(step - 1);
+    };
+
     const handleComplete = async () => {
         if (!gender || !dob || !weight || !height) {
-            return Alert.alert('Missing Info', 'Please fill in all personal details.');
+            Alert.alert('Missing Info', 'Please fill in all personal details.');
+            return;
         }
 
         setLoading(true);
@@ -75,6 +102,7 @@ export default function OnboardingScreen() {
                 height_cm: parseFloat(height),
                 is_onboarded: true
             })).unwrap();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (error: any) {
             Alert.alert('Error', error || 'Failed to save profile');
         } finally {
@@ -86,130 +114,254 @@ export default function OnboardingScreen() {
         switch (step) {
             case 1:
                 return (
-                    <View style={styles.stepContainer}>
-                        <Text style={styles.title}>What is your primary goal?</Text>
-                        <Text style={styles.subtitle}>We will customize your experience based on this.</Text>
-                        {GOALS.map(g => (
-                            <TouchableOpacity
+                    <Animated.View 
+                        entering={FadeInRight.duration(500)} 
+                        exiting={FadeOutLeft.duration(300)}
+                        style={styles.stepContainer}
+                    >
+                        <View style={styles.stepHeader}>
+                            <Text style={styles.stepEmoji}>🎯</Text>
+                            <Text style={styles.title}>What's your primary goal?</Text>
+                            <Text style={styles.subtitle}>Choose what matters most to you right now</Text>
+                        </View>
+
+                        {GOALS.map((g, index) => (
+                            <Animated.View
                                 key={g.id}
-                                style={[styles.selectableCard, goal === g.id && styles.selectedCard]}
-                                onPress={() => setGoal(g.id)}
+                                entering={ZoomIn.delay(index * 100).springify()}
                             >
-                                <Text style={styles.cardIcon}>{g.icon}</Text>
-                                <Text style={[styles.cardLabel, goal === g.id && styles.selectedLabel]}>{g.label}</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.optionCard, goal === g.id && styles.selectedCard]}
+                                    onPress={() => {
+                                        setGoal(g.id);
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    }}
+                                    activeOpacity={0.8}
+                                >
+                                    {goal === g.id ? (
+                                        <LinearGradient
+                                            colors={g.color}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.selectedGradient}
+                                        >
+                                            <Text style={styles.optionIcon}>{g.icon}</Text>
+                                            <Text style={[styles.optionLabel, styles.selectedLabel]}>{g.label}</Text>
+                                            <View style={styles.checkmark}>
+                                                <Text style={styles.checkmarkText}>✓</Text>
+                                            </View>
+                                        </LinearGradient>
+                                    ) : (
+                                        <View style={styles.optionContent}>
+                                            <Text style={styles.optionIcon}>{g.icon}</Text>
+                                            <Text style={styles.optionLabel}>{g.label}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            </Animated.View>
                         ))}
-                    </View>
+                    </Animated.View>
                 );
             case 2:
                 return (
-                    <View style={styles.stepContainer}>
-                        <Text style={styles.title}>Your experience level?</Text>
-                        <Text style={styles.subtitle}>How long have you been training consistently?</Text>
-                        {EXPERIENCE_LEVELS.map(lev => (
-                            <TouchableOpacity
+                    <Animated.View 
+                        entering={FadeInRight.duration(500)} 
+                        exiting={FadeOutLeft.duration(300)}
+                        style={styles.stepContainer}
+                    >
+                        <View style={styles.stepHeader}>
+                            <Text style={styles.stepEmoji}>💪</Text>
+                            <Text style={styles.title}>Your experience level?</Text>
+                            <Text style={styles.subtitle}>This helps us tailor your program</Text>
+                        </View>
+
+                        {EXPERIENCE_LEVELS.map((lev, index) => (
+                            <Animated.View
                                 key={lev.id}
-                                style={[styles.selectableCard, experience === lev.id && styles.selectedCard]}
-                                onPress={() => setExperience(lev.id)}
+                                entering={ZoomIn.delay(index * 100).springify()}
                             >
-                                <View>
-                                    <Text style={[styles.cardLabel, experience === lev.id && styles.selectedLabel]}>{lev.label}</Text>
-                                    <Text style={styles.cardDescription}>{lev.description}</Text>
-                                </View>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.optionCard, experience === lev.id && styles.selectedCard]}
+                                    onPress={() => {
+                                        setExperience(lev.id);
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    }}
+                                    activeOpacity={0.8}
+                                >
+                                    {experience === lev.id ? (
+                                        <LinearGradient
+                                            colors={['#6366f1', '#8b5cf6']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.selectedGradient}
+                                        >
+                                            <View style={styles.experienceContent}>
+                                                <Text style={styles.experienceIcon}>{lev.icon}</Text>
+                                                <View style={styles.experienceText}>
+                                                    <Text style={[styles.optionLabel, styles.selectedLabel]}>{lev.label}</Text>
+                                                    <Text style={styles.experienceDescription}>{lev.description}</Text>
+                                                </View>
+                                            </View>
+                                            <View style={styles.checkmark}>
+                                                <Text style={styles.checkmarkText}>✓</Text>
+                                            </View>
+                                        </LinearGradient>
+                                    ) : (
+                                        <View style={styles.experienceContent}>
+                                            <Text style={styles.experienceIcon}>{lev.icon}</Text>
+                                            <View style={styles.experienceText}>
+                                                <Text style={styles.optionLabel}>{lev.label}</Text>
+                                                <Text style={[styles.experienceDescription, { color: '#64748b' }]}>{lev.description}</Text>
+                                            </View>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            </Animated.View>
                         ))}
-                    </View>
+                    </Animated.View>
                 );
             case 3:
                 return (
-                    <View style={styles.stepContainer}>
-                        <Text style={styles.title}>A few more details...</Text>
-                        <Text style={styles.subtitle}>To calculate your metrics accurately.</Text>
+                    <Animated.View 
+                        entering={FadeInRight.duration(500)} 
+                        exiting={FadeOutLeft.duration(300)}
+                        style={styles.stepContainer}
+                    >
+                        <View style={styles.stepHeader}>
+                            <Text style={styles.stepEmoji}>📊</Text>
+                            <Text style={styles.title}>Personal Details</Text>
+                            <Text style={styles.subtitle}>Help us calculate your metrics accurately</Text>
+                        </View>
 
                         <Text style={styles.inputLabel}>Gender</Text>
-                        <View style={styles.row}>
-                            {GENDERS.map(g => (
+                        <View style={styles.genderRow}>
+                            {GENDERS.map((g) => (
                                 <TouchableOpacity
-                                    key={g}
-                                    style={[styles.chip, gender === g && styles.selectedChip]}
-                                    onPress={() => setGender(g)}
+                                    key={g.id}
+                                    style={[styles.genderChip, gender === g.id && styles.selectedGenderChip]}
+                                    onPress={() => {
+                                        setGender(g.id);
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }}
+                                    activeOpacity={0.8}
                                 >
-                                    <Text style={[styles.chipText, gender === g && styles.selectedChipText]}>{g}</Text>
+                                    {gender === g.id ? (
+                                        <LinearGradient
+                                            colors={['#10b981', '#22c55e']}
+                                            style={styles.genderChipGradient}
+                                        >
+                                            <Text style={styles.genderIcon}>{g.icon}</Text>
+                                            <Text style={styles.selectedGenderText}>{g.label}</Text>
+                                        </LinearGradient>
+                                    ) : (
+                                        <>
+                                            <Text style={styles.genderIcon}>{g.icon}</Text>
+                                            <Text style={styles.genderText}>{g.label}</Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                             ))}
                         </View>
 
-                        <Text style={styles.inputLabel}>Date of Birth (YYYY-MM-DD)</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="1995-10-25"
-                            value={dob}
-                            onChangeText={setDob}
-                        />
+                        <Text style={styles.inputLabel}>Date of Birth</Text>
+                        <View style={styles.inputWrapper}>
+                            <Text style={styles.inputIcon}>📅</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="YYYY-MM-DD (e.g., 1995-10-25)"
+                                placeholderTextColor="#94a3b8"
+                                value={dob}
+                                onChangeText={setDob}
+                            />
+                        </View>
 
                         <View style={styles.row}>
                             <View style={{ flex: 1, marginRight: 8 }}>
                                 <Text style={styles.inputLabel}>Weight (kg)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="80"
-                                    keyboardType="numeric"
-                                    value={weight}
-                                    onChangeText={setWeight}
-                                />
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.inputIcon}>⚖️</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="80"
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="numeric"
+                                        value={weight}
+                                        onChangeText={setWeight}
+                                    />
+                                </View>
                             </View>
                             <View style={{ flex: 1, marginLeft: 8 }}>
                                 <Text style={styles.inputLabel}>Height (cm)</Text>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="180"
-                                    keyboardType="numeric"
-                                    value={height}
-                                    onChangeText={setHeight}
-                                />
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.inputIcon}>📏</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="180"
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="numeric"
+                                        value={height}
+                                        onChangeText={setHeight}
+                                    />
+                                </View>
                             </View>
                         </View>
-                    </View>
+                    </Animated.View>
                 );
             default:
                 return null;
         }
     };
 
+    const progress = step / 3;
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <View style={styles.container}>
-                <AppHeader title="Setup Profile" showProfile={false} />
+            <LinearGradient
+                colors={['#0f172a', '#1e293b']}
+                style={styles.container}
+            >
+                <AppHeader title="Welcome to FitReps" showProfile={false} />
 
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.progressHeader}>
-                        <Text style={styles.progressText}>Step {step} of 3</Text>
-                        <View style={styles.progressBar}>
-                            <View style={[styles.progressFill, { width: `${(step / 3) * 100}%` }]} />
-                        </View>
-                    </View>
+                <ScrollView 
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Progress Ring */}
+                    <Animated.View entering={FadeIn.duration(800)} style={styles.progressContainer}>
+                        <ProgressRing
+                            progress={progress}
+                            size={120}
+                            strokeWidth={10}
+                            color="#10b981"
+                            backgroundColor="rgba(255, 255, 255, 0.1)"
+                        >
+                            <Text style={styles.progressText}>Step</Text>
+                            <Text style={styles.progressNumber}>{step}/3</Text>
+                        </ProgressRing>
+                    </Animated.View>
 
                     {renderStep()}
                 </ScrollView>
 
                 <View style={styles.footer}>
                     {step > 1 && (
-                        <TouchableOpacity onPress={() => setStep(step - 1)} style={styles.backButton}>
-                            <Text style={styles.backButtonText}>Back</Text>
+                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                            <Text style={styles.backButtonText}>← Back</Text>
                         </TouchableOpacity>
                     )}
                     <View style={{ flex: 1, marginLeft: step > 1 ? 16 : 0 }}>
-                        <PrimaryButton
-                            title={step === 3 ? "Let's Go!" : "Continue"}
+                        <AnimatedButton
+                            title={step === 3 ? "Let's Go! 🚀" : "Continue"}
                             onPress={handleNext}
                             isLoading={loading}
+                            colors={step === 3 ? ['#10b981', '#22c55e'] : ['#6366f1', '#8b5cf6']}
                         />
                     </View>
                 </View>
-            </View>
+            </LinearGradient>
         </KeyboardAvoidingView>
     );
 }
@@ -217,130 +369,197 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     scrollContent: {
         padding: 24,
     },
-    progressHeader: {
+    progressContainer: {
+        alignItems: 'center',
         marginBottom: 32,
+        marginTop: 20,
     },
     progressText: {
         fontSize: 14,
-        color: '#64748b',
+        color: 'rgba(255, 255, 255, 0.7)',
+        fontWeight: '600',
+    },
+    progressNumber: {
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    progressBar: {
-        height: 8,
-        backgroundColor: '#f1f5f9',
-        borderRadius: 4,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#4f46e5',
+        color: '#fff',
     },
     stepContainer: {
         flex: 1,
     },
+    stepHeader: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    stepEmoji: {
+        fontSize: 64,
+        marginBottom: 16,
+    },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#0f172a',
+        color: '#fff',
         marginBottom: 8,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#64748b',
-        marginBottom: 32,
+        color: 'rgba(255, 255, 255, 0.7)',
+        textAlign: 'center',
         lineHeight: 24,
     },
-    selectableCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 18,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: '#f1f5f9',
+    optionCard: {
+        borderRadius: 20,
         marginBottom: 16,
-        backgroundColor: '#fff',
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     selectedCard: {
-        borderColor: '#4f46e5',
-        backgroundColor: '#f5f3ff',
+        borderColor: 'transparent',
+        shadowColor: '#6366f1',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.5,
+        shadowRadius: 16,
+        elevation: 8,
     },
-    cardIcon: {
-        fontSize: 24,
+    optionContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    selectedGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+    },
+    optionIcon: {
+        fontSize: 32,
         marginRight: 16,
     },
-    cardLabel: {
+    optionLabel: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#334155',
+        color: 'rgba(255, 255, 255, 0.9)',
+        flex: 1,
     },
     selectedLabel: {
-        color: '#4f46e5',
+        color: '#fff',
     },
-    cardDescription: {
-        fontSize: 14,
-        color: '#64748b',
-        marginTop: 2,
+    checkmark: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkmarkText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    experienceContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    experienceIcon: {
+        fontSize: 32,
+        marginRight: 16,
+    },
+    experienceText: {
+        flex: 1,
+    },
+    experienceDescription: {
+        fontSize: 13,
+        color: 'rgba(255, 255, 255, 0.7)',
+        marginTop: 4,
     },
     inputLabel: {
         fontSize: 14,
-        fontWeight: 'bold',
-        color: '#475569',
+        fontWeight: '600',
+        color: 'rgba(255, 255, 255, 0.8)',
         marginBottom: 8,
         marginTop: 16,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    inputIcon: {
+        fontSize: 20,
+        marginRight: 12,
     },
     input: {
-        backgroundColor: '#f8fafc',
-        borderRadius: 12,
-        padding: 16,
+        flex: 1,
+        paddingVertical: 16,
         fontSize: 16,
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        color: '#0f172a',
+        color: '#fff',
+        fontWeight: '500',
     },
     row: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
+    },
+    genderRow: {
+        flexDirection: 'row',
         gap: 12,
         marginBottom: 8,
     },
-    chip: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 12,
-        backgroundColor: '#f1f5f9',
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
+    genderChip: {
+        flex: 1,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
-    selectedChip: {
-        backgroundColor: '#4f46e5',
-        borderColor: '#4f46e5',
+    selectedGenderChip: {
+        borderColor: 'transparent',
     },
-    chipText: {
+    genderChipGradient: {
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    genderIcon: {
+        fontSize: 24,
+        marginBottom: 4,
+    },
+    genderText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#475569',
+        color: 'rgba(255, 255, 255, 0.7)',
     },
-    selectedChipText: {
+    selectedGenderText: {
+        fontSize: 14,
+        fontWeight: '600',
         color: '#fff',
     },
     footer: {
         padding: 24,
         borderTopWidth: 1,
-        borderTopColor: '#f1f5f9',
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
         flexDirection: 'row',
         alignItems: 'center',
     },
     backButton: {
         paddingHorizontal: 16,
+        paddingVertical: 12,
     },
     backButtonText: {
-        color: '#64748b',
+        color: 'rgba(255, 255, 255, 0.7)',
         fontWeight: '600',
+        fontSize: 16,
     },
 });
