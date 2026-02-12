@@ -20,11 +20,11 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
 const GOALS = [
-    { id: 'lose_fat', label: 'Lose Fat', icon: '🔥' },
-    { id: 'build_muscle', label: 'Build Muscle', icon: '💪' },
-    { id: 'body_recomp', label: 'Body Recomposition', icon: '⚖️' },
-    { id: 'increase_strength', label: 'Increase Strength', icon: '🏋️‍♂️' },
-    { id: 'improve_fitness', label: 'Improve Fitness & Endurance', icon: '🏃‍♂️' },
+    { id: 'lose_fat', label: 'Lose Fat', icon: '🔥', color: ['#f97316', '#ef4444'] },
+    { id: 'build_muscle', label: 'Build Muscle', icon: '💪', color: ['#8b5cf6', '#ec4899'] },
+    { id: 'body_recomp', label: 'Body Recomposition', icon: '⚖️', color: ['#06b6d4', '#3b82f6'] },
+    { id: 'increase_strength', label: 'Increase Strength', icon: '🏋️‍♂️', color: ['#10b981', '#22c55e'] },
+    { id: 'improve_fitness', label: 'Improve Fitness & Endurance', icon: '🏃‍♂️', color: ['#eab308', '#f59e0b'] },
 ];
 
 export default function ProfileScreen() {
