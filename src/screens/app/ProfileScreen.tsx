@@ -96,24 +96,37 @@ export default function ProfileScreen() {
 
     return (
         <View style={styles.container}>
+            <LinearGradient
+                colors={['#0f172a', '#1e293b', '#334155']}
+                style={styles.backgroundGradient}
+            />
+            
             <AppHeader title="My Profile" showBack={true} />
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.profileHeader}>
-                    <View style={styles.avatarContainer}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Profile Header */}
+                <Animated.View entering={FadeIn.duration(600)} style={styles.profileHeader}>
+                    <LinearGradient
+                        colors={['#6366f1', '#8b5cf6']}
+                        style={styles.avatarContainer}
+                    >
                         <Text style={styles.avatarText}>
                             {user?.email?.charAt(0).toUpperCase()}
                         </Text>
-                    </View>
+                    </LinearGradient>
                     <Text style={styles.emailText}>{user?.email}</Text>
-                </View>
+                </Animated.View>
 
-                <View style={styles.section}>
+                {/* Fitness Journey Section */}
+                <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Fitness Journey</Text>
+                        <View style={styles.sectionHeaderLeft}>
+                            <Text style={styles.sectionIcon}>🎯</Text>
+                            <Text style={styles.sectionTitle}>Fitness Journey</Text>
+                        </View>
                         {!isEditingGoal && (
                             <TouchableOpacity onPress={() => setIsEditingGoal(true)}>
-                                <Text style={styles.editLink}>Change Goal</Text>
+                                <Text style={styles.editLink}>Change</Text>
                             </TouchableOpacity>
                         )}
                     </View>
@@ -126,9 +139,24 @@ export default function ProfileScreen() {
                                     key={g.id}
                                     style={[styles.goalCard, selectedGoal === g.id && styles.selectedGoalCard]}
                                     onPress={() => setSelectedGoal(g.id)}
+                                    activeOpacity={0.8}
                                 >
-                                    <Text style={styles.goalIcon}>{g.icon}</Text>
-                                    <Text style={[styles.goalLabel, selectedGoal === g.id && styles.selectedGoalLabel]}>{g.label}</Text>
+                                    {selectedGoal === g.id ? (
+                                        <LinearGradient
+                                            colors={g.color}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.goalCardGradient}
+                                        >
+                                            <Text style={styles.goalIcon}>{g.icon}</Text>
+                                            <Text style={[styles.goalLabel, styles.selectedGoalLabel]}>{g.label}</Text>
+                                        </LinearGradient>
+                                    ) : (
+                                        <View style={styles.goalCardContent}>
+                                            <Text style={styles.goalIcon}>{g.icon}</Text>
+                                            <Text style={styles.goalLabel}>{g.label}</Text>
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                             ))}
                             <View style={styles.editActions}>
@@ -142,38 +170,109 @@ export default function ProfileScreen() {
                                     <Text style={styles.cancelText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <PrimaryButton
+                                    <AnimatedButton
                                         title="Save Goal"
                                         onPress={handleUpdateGoal}
                                         isLoading={loading}
+                                        colors={['#10b981', '#22c55e']}
                                     />
                                 </View>
                             </View>
                         </View>
                     ) : (
-                        <View style={styles.detailCard}>
-                            {renderDetail('Current Goal', GOALS.find(g => g.id === profile?.goal)?.label)}
-                            {renderDetail('Experience', profile?.experience_level?.toUpperCase())}
-                        </View>
+                        <LinearGradient
+                            colors={GOALS.find(g => g.id === profile?.goal)?.color || ['#6366f1', '#8b5cf6']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.currentGoalCard}
+                        >
+                            <Text style={styles.currentGoalIcon}>
+                                {GOALS.find(g => g.id === profile?.goal)?.icon || '🎯'}
+                            </Text>
+                            <View style={styles.currentGoalContent}>
+                                <Text style={styles.currentGoalTitle}>Current Goal</Text>
+                                <Text style={styles.currentGoalLabel}>
+                                    {GOALS.find(g => g.id === profile?.goal)?.label}
+                                </Text>
+                                <Text style={styles.experienceBadge}>
+                                    {profile?.experience_level?.toUpperCase()}
+                                </Text>
+                            </View>
+                        </LinearGradient>
                     )}
-                </View>
+                </Animated.View>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Stats & Metrics</Text>
-                    <View style={styles.detailCard}>
-                        {renderDetail('Gender', profile?.gender)}
-                        {renderDetail('Birth Date', profile?.date_of_birth)}
-                        {renderDetail('Current Weight', `${profile?.weight_kg} kg`)}
-                        {renderDetail('Height', `${profile?.height_cm} cm`)}
+                {/* Stats & Metrics */}
+                <Animated.View entering={FadeInDown.delay(400).springify()} style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <View style={styles.sectionHeaderLeft}>
+                            <Text style={styles.sectionIcon}>📊</Text>
+                            <Text style={styles.sectionTitle}>Stats & Metrics</Text>
+                        </View>
                     </View>
-                </View>
+                    
+                    <View style={styles.statsGrid}>
+                        <View style={styles.statItem}>
+                            <LinearGradient
+                                colors={['rgba(99, 102, 241, 0.2)', 'rgba(139, 92, 246, 0.2)']}
+                                style={styles.statBox}
+                            >
+                                <Text style={styles.statLabel}>Gender</Text>
+                                <Text style={styles.statValue}>{profile?.gender || 'Not set'}</Text>
+                            </LinearGradient>
+                        </View>
+                        
+                        <View style={styles.statItem}>
+                            <LinearGradient
+                                colors={['rgba(16, 185, 129, 0.2)', 'rgba(34, 197, 94, 0.2)']}
+                                style={styles.statBox}
+                            >
+                                <Text style={styles.statLabel}>Weight</Text>
+                                <Text style={styles.statValue}>{profile?.weight_kg} kg</Text>
+                            </LinearGradient>
+                        </View>
+                        
+                        <View style={styles.statItem}>
+                            <LinearGradient
+                                colors={['rgba(6, 182, 212, 0.2)', 'rgba(59, 130, 246, 0.2)']}
+                                style={styles.statBox}
+                            >
+                                <Text style={styles.statLabel}>Height</Text>
+                                <Text style={styles.statValue}>{profile?.height_cm} cm</Text>
+                            </LinearGradient>
+                        </View>
+                        
+                        <View style={styles.statItem}>
+                            <LinearGradient
+                                colors={['rgba(249, 115, 22, 0.2)', 'rgba(239, 68, 68, 0.2)']}
+                                style={styles.statBox}
+                            >
+                                <Text style={styles.statLabel}>Birth Date</Text>
+                                <Text style={styles.statValue}>
+                                    {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : 'Not set'}
+                                </Text>
+                            </LinearGradient>
+                        </View>
+                    </View>
+                </Animated.View>
 
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={handleLogout}
-                >
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
+                {/* Logout Button */}
+                <Animated.View entering={FadeInDown.delay(600).springify()}>
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={handleLogout}
+                        activeOpacity={0.8}
+                    >
+                        <LinearGradient
+                            colors={['#ef4444', '#dc2626']}
+                            style={styles.logoutGradient}
+                        >
+                            <Text style={styles.logoutText}>🚪 Logout</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </Animated.View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
         </View>
     );
