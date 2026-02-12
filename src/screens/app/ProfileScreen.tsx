@@ -14,7 +14,10 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { updateProfile, fetchProfile } from '../../store/slices/profileSlice';
 import { logout } from '../../store/slices/authSlice';
 import AppHeader from '../../components/layout/AppHeader';
-import PrimaryButton from '../../components/ui/PrimaryButton';
+import AnimatedButton from '../../components/ui/AnimatedButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 const GOALS = [
     { id: 'lose_fat', label: 'Lose Fat', icon: '🔥' },
