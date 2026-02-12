@@ -55,6 +55,7 @@ export default function ProfileScreen() {
         try {
             await dispatch(updateProfile({ goal: selectedGoal })).unwrap();
             setIsEditingGoal(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('Success', 'Fitness goal updated successfully!');
         } catch (error: any) {
             Alert.alert('Error', error || 'Failed to update goal');
